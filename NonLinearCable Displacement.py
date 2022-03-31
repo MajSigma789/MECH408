@@ -144,8 +144,8 @@ stressUC = 1000*getStresses(delta=finalDelta) #MPa
 
 #LOWPRIO: TK formatted result table
 # report uncorrected info
-uHistoryUC, vHistoryUC = positionHistoryUncorrected[0], positionHistoryUncorrected[1]
-deltaHistoryUC = deltaCalculation(np.array(positionHistoryUncorrected))
+uHistoryUC, vHistoryUC = np.array(positionHistoryUncorrected[0]), np.array(positionHistoryUncorrected[1])
+deltaHistoryUC = np.sqrt(uHistoryUC**2 + vHistoryUC**2)
 ##uHistoryC, vHistoryC = positionHistoryCorrected[0], positionHistoryCorrected[1]
 print("Final Uncorrected X: {:.3f}mm".format(uHistoryUC[-1]))
 print("Final Uncorrected Y: {:.3f}mm".format(vHistoryUC[-1]))
