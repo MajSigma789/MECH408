@@ -3,9 +3,9 @@
 # MECH 408
 # Nonlinear Cable Handout
 # Created: 1/26/2022
-# Modified: 3/25/2022
+# Modified: 3/31/2022
 # Uses a corrected incremental approach to solve geometric 
-# and material nonlinearities in cable deformation
+# nonlinearities in cable deformation
 ##
 
 import numpy as np
@@ -223,12 +223,12 @@ stressC = 1000*getStresses(delta=finalDelta) #MPa
 #LOWPRIO: TK formatted result table
 # report uncorrected info
 uHistoryUC, vHistoryUC = positionHistoryUncorrected[0], positionHistoryUncorrected[1]
-uHistoryC, vHistoryC = positionHistoryCorrected[0], positionHistoryCorrected[1]
 print("Final Uncorrected X: {:.3f}mm".format(uHistoryUC[-1]))
 print("Final Uncorrected Y: {:.3f}mm".format(vHistoryUC[-1]))
 print("Uncorrected Stress 1: {:.2f} MPa".format(stressUC[0]))
 print("Uncorrected Stress 2: {:.2f} MPa".format(stressUC[1]))
 # report corrected info
+uHistoryC, vHistoryC = positionHistoryCorrected[0], positionHistoryCorrected[1]
 print("Final Corrected X: {:.3f}mm".format(uHistoryC[-1]))
 print("Final Corrected Y: {:.3f}mm".format(vHistoryC[-1]))
 print("Corrected Stress 1: {:.2f} MPa".format(stressC[0]))
