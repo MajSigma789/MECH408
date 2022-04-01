@@ -49,7 +49,6 @@ class VariableTable(Frame):
 #LOWPRIO: setup problem as a child of abstract Solvable, separate system from solver methods
 def tangentStiffness(position):
     """Forms the tangent stiffness matrix of the two cable system"""
-    Kt = np.zeros(shape=(2,2))
     L1Offset = (L[0] + position[0])**(-1)
     L2SinOffset = L[1]*np.sin(alpha[1]) + position[1]
     L2CosOffset = L[1]*np.cos(alpha[1]) - position[0]
@@ -58,23 +57,8 @@ def tangentStiffness(position):
     w1Term = (1 + w1**2)**(-1)
     w2Term = (1 + w2**2)**(-1)
     deltas = deltaCalculation(position=position)
-    # account for material non-linearities
-    if materials is True:
-        # find new stiffness derivative and stiffness constant
-        stresses = getStresses(delta=deltas)
-        updateElementStiffness(stress = stresses)
-        stiffnessDerivatives = stiffnessDerivative(stress=stresses)
-        # modify tangent stiffness for nonlinearity
-        firstNonlinearTerm = stiffnessDerivatives[0]*deltas[0]*w1Term
-        secondNonlinearTerm = stiffnessDerivatives[1]*deltas[1]*w2Term
-        Kt += np.array([
-            [firstNonlinearTerm + secondNonlinearTerm,
-            firstNonlinearTerm*w1 - secondNonlinearTerm*w2],
-            [firstNonlinearTerm*w1 - secondNonlinearTerm*w2,
-            firstNonlinearTerm*w1*w1 + secondNonlinearTerm*w2*w2]
-        ])
     # linear material tangent stiffness matrix
-    Kt += np.array([
+    Kt = np.array([
         [k[0]*(w1Term + deltas[0]*w1*w1Term**(1.5)*position[1]*L1Offset**2) + k[1]*(w2Term + deltas[1]*w2*w2Term**1.5*(L2SinOffset)*(L2CosOffset)**(-2)), # dPx/du
         k[0]*(w1*w1Term - deltas[0]*w1*w1Term**(1.5)*L1Offset) - k[1]*(w2*w2Term - deltas[1]*w2*w2Term**1.5*(L[0]*np.cos(alpha[1]) - position[0])**(-1))], # dPx/dv
         [k[0]*(w1*w1Term + deltas[0]*w1Term**(1.5)*position[1]*L1Offset**2) - k[1]*(w2*w2Term - deltas[1]*w2Term**1.5*(L2SinOffset)*(L2CosOffset)**(-2)), # dPy/du
@@ -137,42 +121,7 @@ def getStresses(delta):
     Returns: stress [GPa = kN/mm^2]"""
     return k*delta/A #kN/mm^2 = GPa
 
-def getStrainRBOG(stress):
-    """Calculates the strain for a given stress using the Ramberg-Osgood relationship
-    Parameters: stress [GPa]
-    Returns: strain [-]"""
-    return stress/E + .002*(stress/yieldStress)**(1/n) #-
-
-
-def stiffnessDerivative(stress):
-    """Calculates the instantaneous rate of change the element stiffness for a change in displacement
-    Parameters: stress [GPa]
-    Returns: dK/dDelta [kN/mm^2 = GPa]"""
-    strain = getStrainRBOG(stress) # -
-    if np.array_equiv(strain, np.zeros_like(strain)):
-        return np.zeros_like(stress)
-    strainDeriv = 1/E + .002/yieldStress/n*(stress/yieldStress)**(1/n - 1) #GPa^-1
-    stiffDeriv = A/L/L/strain*(1/strainDeriv - stress/strain) #GPa = kN/mm^2
-    return stiffDeriv
-
-def updateElementStiffness(stress):
-    """Updates the element stiffness for the current loading
-    Parameters: stress [GPa]
-    Returns: k [kN/mm] at reference"""
-    global k
-    # initial increment is elastic
-    if np.array_equiv(stress, np.zeros_like(stress)):
-        k = E*A/L
-        return
-    strain = getStrainRBOG(stress)
-    k = A/L*stress/strain
-
-
 # main method
-#LOWPRIO: take material properties as input window
-yieldStress = .11 #kN/mm^2
-n = .1051
-materials = True
 # create input window
 inTable = VariableTable()
 inTable.master.title("System Parameters")
