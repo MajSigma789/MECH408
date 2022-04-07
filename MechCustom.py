@@ -9,7 +9,6 @@ class InputTable(Frame):
         self.create_inputs(rows, columnTitles, button)
         self.mainloop()
 
-    #TODO: add editible toggle
     def create_inputs(self, rows: dict[str, list[str, int]], columnTitles: Optional[list[str]], button: bool) -> None:
         """Instantiates and lays out the input table fields and buttons"""
         titleWidth = max(7, len(button))
@@ -40,5 +39,37 @@ class InputTable(Frame):
         if button:
             Button(self, width=columnWidth, text=button, command=lambda: self.quit()).grid(row=row+2, column=tableWidth)
 
+class OutputTable(Frame):
+    def __init__(self, rows: dict[str, list[list[str], str]], columnTitles: Optional[list[str]]=None, title: str="", master=None) -> None:
+        Frame.__init__(self,master)
+        self.master.title(title)
+        self.grid()
+        self.create_inputs(rows, columnTitles)
+        self.mainloop()
 
-# This will be deleted without the cache
+    def create_inputs(self, rows: dict[str, list[list[str], str]], columnTitles: Optional[list[str]]) -> None:
+        """Instantiates and lays out the input table fields and buttons"""
+        titleWidth = 7
+        tableWidth = 0
+        for title, [entries, unit] in rows.items():
+            maxEntry = 0
+            for entry in entries:
+                maxEntry = max(maxEntry, len(entry))
+            titleWidth = max((titleWidth, len(title)+len(unit)+4, maxEntry))
+            tableWidth = max(tableWidth, len(entries))
+        if columnTitles is None:
+            columnWidth = 7
+            columnTitles = range(1,tableWidth+1)
+        else:
+            columnWidth = max([len(title) for title in columnTitles])
+        # store entry values in dictionary for user access
+        self.values = {}
+        # title row
+        for i, column in enumerate(columnTitles):
+            Label(self, width=columnWidth, text=column).grid(row=0, column=i+1)
+        # main body
+        for row, (title, [entries, unit]) in enumerate(rows.items()):
+            # title entry
+            Label(self, width=titleWidth, text=f"{title} [{unit}]").grid(row=row+1, column=0)
+            for column, entry in enumerate(entries):
+                Label(self, width=columnWidth, text=entry).grid(row=row+1, column=column+1)
