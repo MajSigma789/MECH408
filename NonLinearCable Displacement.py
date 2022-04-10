@@ -3,14 +3,14 @@
 # MECH 408
 # Nonlinear Cable Handout
 # Created: 3/27/2022
-# Modified: 3/31/2022
+# Modified: 4/7/2022
 # Uses a corrected incremental approach to solve geometric nonlinearities
 # in cable deformation with a diplacement controlled input
 ##
 
 import numpy as np
 import matplotlib.pyplot as plt
-from MechCustom import IOTable
+from MechCustom import InputTable, OutputTable
 
 def tangentStiffness(position):
     """Forms the tangent stiffness matrix of the two cable system"""
@@ -38,6 +38,7 @@ def deltaCalculation(position):
     delta2 = np.sqrt((L[1]*np.cos(alpha[1]) - position[0])**2 + (L[1]*np.sin(alpha[1]) + position[1])**2) - L[1]
     return np.array((delta1, delta2))
 
+#FIXME: something fucky comes this way in the NR iterations
 def newtonRaphsonCorrection(position, load, stiffness=np.array([]), error=1E-6):
     """Uses the Newton-Raphson root finding method to enforce equillibrium"""
     # form stiffness if needed
@@ -88,13 +89,9 @@ def getStresses(delta):
 
 
 # main method
-labels = ("L", "E", "A", "alpha", "displacement", "increments")
-units = ("mm", "GPa", "mm^2", "rad", "mm", "-")
-entries = (2, 2, 2, 2, 1, 1)
+data = {"L":("mm",2), "E":("GPa",2), "A":("mm^2",2), "alpha":("rad",2), "displacement":("mm",1), "increments":("-",1)}
 # create input window
-inTable = IOTable(titles=labels, units=units, entries=entries, button="Run")
-inTable.master.title("System Parameters")
-inTable.mainloop()
+inTable = InputTable(rows=data, title="System Parameters", button="Run")
 
 # get input parameters
 L = np.array([float(entry.get()) for entry in inTable.values["L"]]) #mm
@@ -103,6 +100,7 @@ A = np.array([float(entry.get()) for entry in inTable.values["A"]]) #mm^2
 alpha = np.array([float(entry.get()) for entry in inTable.values["alpha"]]) #rad
 totalDisplacement = float(inTable.values["displacement"][0].get()) #mm
 increments = int(inTable.values["increments"][0].get())
+inTable.destroy()
 
 # derived parameters
 k = E*A/L #kN/mm
@@ -142,22 +140,19 @@ stressUC = 1000*getStresses(delta=finalDelta) #MPa
 ##finalDelta = deltaCalculation(position=position)
 ##stressC = 1000*getStresses(delta=finalDelta) #MPa
 
-#LOWPRIO: TK formatted result table
 # report uncorrected info
 uHistoryUC, vHistoryUC = np.array(positionHistoryUncorrected[0]), np.array(positionHistoryUncorrected[1])
 deltaHistoryUC = np.sqrt(uHistoryUC**2 + vHistoryUC**2)
-##uHistoryC, vHistoryC = positionHistoryCorrected[0], positionHistoryCorrected[1]
-print("Final Uncorrected X: {:.3f}mm".format(uHistoryUC[-1]))
-print("Final Uncorrected Y: {:.3f}mm".format(vHistoryUC[-1]))
-print("Final Uncorrect Py: {:.3f}kN".format(forceHistoryUncorrected[-1]))
-print("Uncorrected Stress 1: {:.2f} MPa".format(stressUC[0]))
-print("Uncorrected Stress 2: {:.2f} MPa".format(stressUC[1]))
-### report corrected info
-##print("Final Corrected X: {:.3f}mm".format(uHistoryC[-1]))
-##print("Final Corrected Y: {:.3f}mm".format(vHistoryC[-1]))
-##print("Corrected Stress 1: {:.2f} MPa".format(stressC[0]))
-##print("Corrected Stress 2: {:.2f} MPa".format(stressC[1]))
-##print("Max N-R Iterations: {:d}".format(maxIterations))
+rows = {"Final X":((f"{uHistoryUC[-1]:.3f}"), "mm"), "Final Y":((f"{vHistoryUC[-1]:.3f}"), "mm"), 
+"Final Py":((f"{forceHistoryUncorrected[-1]:.3f}"), "kN"), 
+"Stress 1":((f"{stressUC[0]:.2f}"), "MPa"), "Stress 2":((f"{stressUC[1]:.2f}"), "MPa")}
+OutputTable(rows=rows, columnTitles=("Uncorrected"), title="Simulation Results")
+###uHistoryC, vHistoryC = positionHistoryCorrected[0], positionHistoryCorrected[1]
+###data = {"Final X":((f"{uHistoryUC[-1]:.3f}",f"{uHistoryC[-1]:.3f}"), "mm"), "Final Y":((f"{vHistoryUC[-1]:.3f}",f"{vHistoryC[-1]:.3f}"), "mm"),
+###"Final Py":((f"{forceHistoryUncorrected[-1]:.3f}", f"{forceHistoryCorrected[-1]:.3f}"),"kN"), 
+###"Stress 1":((f"{stressUC[0]:.2f}", f"{stressC[0]:.2f}"), "MPa"), "Stress 2":((f"{stressUC[1]:.2f}", f"{stressC[1]:.2f}"), "MPa"),
+###"Max N-R":(("-", f"{maxIterations}"),"-")}
+###OutputTable(rows=data, columnTitles=("Uncorrected","Corrected"), title="Simulation Results")
 # plot various solutions
 plt.figure()
 plt.title("Iterated Displacements")
@@ -169,7 +164,6 @@ plt.legend()
 #force vs displacement
 plt.figure()
 plt.title("Force vs Displacement")
-#FIXME: ValueError: x and y must have same first dimension, but have shapes (2, 26) and (26,)
 plt.plot(deltaHistoryUC, forceHistoryUncorrected, 'bs', label="Uncorrected Iteration")
 plt.xlabel("Total Deformation [mm]")
 plt.ylabel("Vertial Force [kN]")

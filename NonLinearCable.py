@@ -10,41 +10,7 @@
 
 import numpy as np
 import matplotlib.pyplot as plt
-from tkinter.ttk import *
-
-#TODO: reformat VariableTable to use given title list and dimensions
-class VariableTable(Frame):
-    def __init__(self, master= None):
-        Frame.__init__(self,master)
-        self.grid()
-        self.create_inputs()
-
-    def create_inputs(self):
-        """Instantiates and lays out the input table fields and buttons"""
-        titles = {"":None, "L":"[mm]", "E":"[GPa]", "A":"[mm^2]", "alpha":"[rad]","Force(x,y)":"[kN]"}
-        tablewidth = 3
-        # store entry values in dictionary for later
-        self.values = {}
-        row = -1
-        for title, unit in titles.items():
-            row += 1
-            # top row with no entry points
-            if title == "":
-                Label(self, width=7, text="Cable 1").grid(row=row, column=1)
-                Label(self, width=7, text="Cable 2").grid(row=row, column=2)
-                continue
-            # normal row
-            Label(self, width = 15, text=" ".join([title,unit])).grid(row=row, column=0)
-            self.values[title] = []
-            for column in range(1,tablewidth):
-                self.values[title].append(Entry(self, width=7))
-                self.values[title][-1].grid(row=row, column=column)
-        # last row with only one entry
-        Label(self, width=15, text="increments").grid(row=len(titles), column=0)
-        self.values["increments"] = Entry(self, width=7)
-        self.values["increments"].grid(row=len(titles), column=1)
-        # button to close
-        Button(self, width=7, text="Run", command=lambda: self.quit()).grid(row=len(titles)+1, column=tablewidth-1)
+from MechCustom import InputTable, OutputTable
 
 #LOWPRIO: setup problem as a child of abstract Solvable, separate system from solver methods
 def tangentStiffness(position):
@@ -72,7 +38,6 @@ def deltaCalculation(position):
     delta2 = np.sqrt((L[1]*np.cos(alpha[1]) - position[0])**2 + (L[1]*np.sin(alpha[1]) + position[1])**2) - L[1]
     return np.array((delta1, delta2))
 
-# TODO: try more iterations for correction with material non-linearity
 def newtonRaphsonCorrection(position, load, stiffness=np.array([]), error=1E-6):
     """Uses the Newton-Raphson root finding method to enforce equillibrium"""
     # form stiffness if needed
@@ -122,18 +87,18 @@ def getStresses(delta):
     return k*delta/A #kN/mm^2 = GPa
 
 # main method
+data = {"L":("mm",2), "E":("GPa",2), "A":("mm^2",2), "alpha":("rad",2), "Load (x,y)":("kN",2), "increments":("-",1)}
 # create input window
-inTable = VariableTable()
-inTable.master.title("System Parameters")
-inTable.mainloop()
+inTable = InputTable(rows=data, title="System Parameters", button="Run")
 
 # get input parameters
 L = np.array([float(entry.get()) for entry in inTable.values["L"]]) #mm
 E = np.array([float(entry.get()) for entry in inTable.values["E"]]) #GPa = kN/mm^2
 A = np.array([float(entry.get()) for entry in inTable.values["A"]]) #mm^2
 alpha = np.array([float(entry.get()) for entry in inTable.values["alpha"]]) #rad
-totalLoad = np.array([float(entry.get()) for entry in inTable.values["Force(x,y)"]]) #kN
-increments = int(inTable.values["increments"].get())
+totalLoad = np.array([float(entry.get()) for entry in inTable.values["Load (x,y)"]]) #kN
+increments = int(inTable.values["increments"][0].get())
+inTable.destroy()
 
 # derived parameters
 k = E*A/L #kN/mm
@@ -169,20 +134,13 @@ for dP in loadIncrements:
 finalDelta = deltaCalculation(position=position)
 stressC = 1000*getStresses(delta=finalDelta) #MPa
 
-#LOWPRIO: TK formatted result table
 # report uncorrected info
 uHistoryUC, vHistoryUC = positionHistoryUncorrected[0], positionHistoryUncorrected[1]
-print("Final Uncorrected X: {:.3f}mm".format(uHistoryUC[-1]))
-print("Final Uncorrected Y: {:.3f}mm".format(vHistoryUC[-1]))
-print("Uncorrected Stress 1: {:.2f} MPa".format(stressUC[0]))
-print("Uncorrected Stress 2: {:.2f} MPa".format(stressUC[1]))
-# report corrected info
 uHistoryC, vHistoryC = positionHistoryCorrected[0], positionHistoryCorrected[1]
-print("Final Corrected X: {:.3f}mm".format(uHistoryC[-1]))
-print("Final Corrected Y: {:.3f}mm".format(vHistoryC[-1]))
-print("Corrected Stress 1: {:.2f} MPa".format(stressC[0]))
-print("Corrected Stress 2: {:.2f} MPa".format(stressC[1]))
-print("Max N-R Iterations: {:d}".format(maxIterations))
+data = {"Final X":((f"{uHistoryUC[-1]:.3f}",f"{uHistoryC[-1]:.3f}"), "mm"), "Final Y":((f"{vHistoryUC[-1]:.3f}",f"{vHistoryC[-1]:.3f}"), "mm"),
+"Stress 1":((f"{stressUC[0]:.2f}", f"{stressC[0]:.2f}"), "MPa"), "Stress 2":((f"{stressUC[1]:.2f}", f"{stressC[1]:.2f}"), "MPa"),
+"Max N-R":(("-", f"{maxIterations}"),"-")}
+OutputTable(rows=data, columnTitles=("Uncorrected","Corrected"), title="Simulation Results")
 # plot various solutions
 plt.figure()
 plt.title("Iterated Displacements")
