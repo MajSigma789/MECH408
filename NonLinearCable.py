@@ -92,12 +92,8 @@ data = {"L":("mm",2), "E":("GPa",2), "A":("mm^2",2), "alpha":("rad",2), "Load (x
 inTable = InputTable(rows=data, title="System Parameters", button="Run")
 
 # get input parameters
-L = np.array([float(entry.get()) for entry in inTable.values["L"]]) #mm
-E = np.array([float(entry.get()) for entry in inTable.values["E"]]) #GPa = kN/mm^2
-A = np.array([float(entry.get()) for entry in inTable.values["A"]]) #mm^2
-alpha = np.array([float(entry.get()) for entry in inTable.values["alpha"]]) #rad
-totalLoad = np.array([float(entry.get()) for entry in inTable.values["Load (x,y)"]]) #kN
-increments = int(inTable.values["increments"][0].get())
+[L, E, A, alpha, totalLoad, increments] = [np.array(values) for values in inTable.getValues(entries=("L", "E", "A", "alpha", "Load (x,y)", "increments"))]
+increments = int(increments[0])
 inTable.destroy()
 
 # derived parameters
