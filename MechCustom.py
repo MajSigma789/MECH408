@@ -2,7 +2,7 @@ from tkinter.ttk import Frame, Entry, Label, Button
 from typing import Optional, Union
 
 class InputTable(Frame):
-    def __init__(self, rows: dict[str, list[str, int]], columnTitles: Optional[list[str]]=None, title: str="", button: str="", master=None) -> None:
+    def __init__(self, rows: dict[str, list[str, int]], columnTitles: Optional[list[str]]=None, title: Optional[str]="", button: Optional[str]="", master=None) -> None:
         Frame.__init__(self,master)
         self.master.title(title)
         self.grid()
