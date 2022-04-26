@@ -1,5 +1,5 @@
 from tkinter.ttk import Frame, Entry, Label, Button
-from typing import Optional
+from typing import Optional, Union
 
 class InputTable(Frame):
     def __init__(self, rows: dict[str, list[str, int]], columnTitles: Optional[list[str]]=None, title: str="", button: str="", master=None) -> None:
@@ -38,6 +38,16 @@ class InputTable(Frame):
         # button to close
         if button:
             Button(self, width=columnWidth, text=button, command=lambda: self.quit()).grid(row=row+2, column=tableWidth)
+
+    def getValues(self, entries: list[str]) -> list[Union[list[float], float]]:
+        values = []
+        for entry in entries:
+            try:
+                append = [float(value.get()) for value in self.values[entry]]
+            except:
+                append = None
+            values.append(append)
+        return values
 
 class OutputTable(Frame):
     def __init__(self, rows: dict[str, list[list[str], str]], columnTitles: Optional[list[str]]=None, title: str="", master=None) -> None:
